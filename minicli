@@ -9,10 +9,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 $app = new Minicli\App();
 
-$app->registerCommand('hello', function (array $argv) use($app) {
-    $name = $argv[2] ?? 'World';
-    $app->getPrinter()->display("Hello {$name}\n");
-});
+$app->registerController('hello', new \App\Commands\HelloController($app));
 
 $app->registerCommand('help', function () use($app) {
     $app->getPrinter()->display("Minicli USAGE: help list ...");
