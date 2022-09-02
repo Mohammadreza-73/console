@@ -1,0 +1,13 @@
+{
+    "name": "mohammadreza/cli",
+    "description": "CLI Micro Framework",
+    "type": "project",
+    "license": "MIT",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Minicli\\": "lib/"
+        }
+    }
+}
