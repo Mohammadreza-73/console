@@ -5,12 +5,13 @@ namespace Minicli;
 class App
 {
     private $printer;
-    private $command_registry = [];
+    private $command_registry;
+    private $app_signature;
 
     public function __construct()
     {
         $this->printer = new CliPrinter();
-        $this->command_registry = new CommandRegistry();
+        $this->command_registry = new CommandRegistry(__DIR__ . '/../app/Commands');
     }
 
     public function getPrinter()
@@ -18,33 +19,55 @@ class App
         return $this->printer;
     }
 
-    public function registerController(string $command_name, CommandController $controller)
+    public function getSignature()
     {
-        $this->command_registry->registerController($command_name, $controller);
+        return $this->app_signature;
     }
 
-    public function registerCommand(string $command_name, $callable)
+    public function setSignature($app_signature)
     {
-        $this->command_registry->registerCommand($command_name, $callable);
+        $this->app_signature = $app_signature;
     }
 
-    public function getCommand(string $command_name)
+    public function printSignature()
     {
-        return $this->command_registry[$command_name] ?? null;
+        $this->getPrinter()->display(sprintf("usage: %s", $this->getSignature()));
     }
     
-    public function runCommand(array $argv, $default_command = 'help')
+    public function registerCommand($name, $callable)
     {
-        $command_name = $default_command;
-        if (isset($argv[1])) {
-            $command_name = $argv[1];
+        $this->command_registry->registerCommand($name, $callable);
+    }
+    
+    public function runCommand(array $argv = [])
+    {
+        $input = new CommandCall($argv);
+
+        if (count($input->args) < 2) {
+            $this->printSignature();
+            exit;
         }
-       
+
+        $controller = $this->command_registry->getCallableController($input->command, $input->subcommand);
+        if ($controller instanceof CommandController) {
+            $controller->boot($this);
+            $controller->run($input);
+            $controller->teardown();
+            exit;
+        }
+
+        $this->runSingle($input);
+    }
+
+    private function runSingle(CommandCall $input)
+    {
         try {
-            call_user_func($this->command_registry->getCallable($command_name), $argv);
-            
+            $callable = $this->command_registry->getCallable($input->command);
+            call_user_func($callable, $input);
+
         } catch (\Exception $e) {
-            $this->getPrinter()->display("Error: " . $e->getMessage());
+            $this->getPrinter()->display("ERROR: " . $e->getMessage());
+            $this->printSignature();
             exit;
         }
     }

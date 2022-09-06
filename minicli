@@ -9,10 +9,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 $app = new Minicli\App();
 
-$app->registerController('hello', new \App\Commands\HelloController($app));
+$app->setSignature("minicli hello name [ user=name ]");
 
-$app->registerCommand('help', function () use($app) {
-    $app->getPrinter()->display("Minicli USAGE: help list ...");
+$app->registerCommand("help", function(Minicli\CommandCall $call) use ($app) {
+    $app->printSignature();
+    print_r($call->params);
 });
 
 $app->runCommand($argv);
